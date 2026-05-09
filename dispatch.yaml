@@ -1,0 +1,58 @@
+- name: dispatch
+  hosts: dispatch
+  become: yes
+  tasks:
+
+  - name: Install golang
+    ansible.builtin.dnf:
+      name: golang 
+      state: present
+
+  - name: create roboshop user
+    ansible.builtin.user:
+      name: roboshop
+
+  - name: Recursively remove app directory
+    ansible.builtin.file:
+      path: /app
+      state: absent
+
+  - name: create app directory
+    ansible.builtin.file:
+      path: /app
+      state: directory
+
+  - name: download user application
+    ansible.builtin.get_url:
+      url: https://roboshop-builds.s3.amazonaws.com/dispatch.zip
+      dest: /tmp
+
+  - name: extract user application
+    ansible.builtin.unarchive:
+      src: /tmp/dispatch.zip
+      dest: /app
+      remote_src: yes
+
+  - name: build go application
+    ansible.builtin.command: "{{item}}"
+    loop:
+    - go mod init dispatch
+    - go get
+    - go build
+    args:
+      chdir: /app
+
+  - name: Copy dispatch service
+    ansible.builtin.copy:
+      src: dispatch.service
+      dest: /etc/systemd/system/dispatch.service
+
+  - name: deamon realod and start
+    ansible.builtin.systemd_service:
+      daemon_reload: true
+
+  - name: start and enable dispatch 
+    ansible.builtin.service:
+      name: dispatch 
+      state: restarted
+      enabled: yes
