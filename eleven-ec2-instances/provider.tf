@@ -2,10 +2,9 @@ terraform {
   required_providers {
     aws = {
       source = "hashicorp/aws"
-      version = "5.48.0"
+      version = ">= 6.37.0"
     }
   }
-
 backend "s3" {
   bucket = "linga-devops-rs"
   key = "roboshop-ansible-11-ec2-instances"
